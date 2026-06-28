@@ -1,0 +1,22 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "node server.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# ─── Durable storage ────────────────────────────────────────────────────────
+# A Volume survives redeploys and restarts. Bulletins (script + audio) and the
+# RSS feed-health / quarantine state are written here. Without this, storage is
+# ephemeral and resets on every redeploy.
+#
+# After deploy, set the env var so the app writes to the mount:
+#     BROADCAST_DIR = /data
+#
+# Railway: create a Volume on the service and set its mount path to /data.
+[[deploy.volumes]]
+mountPath = "/data"
+name = "edgx-data"
