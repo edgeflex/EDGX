@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube to Transcript — Free Transcript Generator</title>
+<style>
+  :root {
+    --red:      #FF0000;
+    --red-dark: #CC0000;
+    --red-soft: #fff0f0;
+    --ink:      #0f0f0f;
+    --ink-2:    #404040;
+    --ink-3:    #717171;
+    --border:   #e5e5e5;
+    --bg:       #ffffff;
+    --bg-2:     #f9f9f9;
+    --bg-3:     #f2f2f2;
+    --green:    #2da44e;
+    --radius:   10px;
+    --shadow:   0 1px 4px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    --font:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono:     'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); color: var(--ink); background: var(--bg); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--red); text-decoration: none; }
+
+  /* NAV */
+  nav { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; color: var(--ink); }
+  .nav-brand .yt-icon { color: var(--red); }
+  .nav-links { display: flex; align-items: center; gap: 6px; }
+  .nav-links a { font-size: 13px; color: var(--ink-2); padding: 5px 10px; border-radius: 6px; transition: background .15s; }
+  .nav-links a:hover { background: var(--bg-3); }
+  .nav-links .btn-nav { background: var(--red); color: #fff; font-weight: 600; padding: 6px 14px; border-radius: 6px; }
+  .nav-links .btn-nav:hover { background: var(--red-dark); }
+
+  /* LAYOUT */
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  /* HERO */
+  .hero { padding: 64px 0 48px; text-align: center; }
+  .hero h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; line-height: 1.15; letter-spacing: -.02em; margin-bottom: 16px; }
+  .hero h1 span { color: var(--red); }
+  .hero p { font-size: 17px; color: var(--ink-2); max-width: 560px; margin: 0 auto 32px; }
+
+  /* TABS */
+  .tab-bar { display: flex; gap: 4px; background: var(--bg-3); border-radius: 10px; padding: 4px; margin-bottom: 24px; width: fit-content; margin-left: auto; margin-right: auto; }
+  .tab-btn { padding: 8px 20px; border-radius: 7px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--ink-3); transition: all .15s; }
+  .tab-btn.active { background: var(--bg); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+
+  /* TAB PANELS */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* INPUT CARD */
+  .input-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; }
+  .url-row { display: flex; gap: 10px; }
+  .url-row input, .add-row input { flex: 1; border: 1.5px solid var(--border); border-radius: 8px; padding: 11px 14px; font-size: 14px; font-family: var(--font); outline: none; transition: border-color .15s; color: var(--ink); }
+  .url-row input:focus, .add-row input:focus { border-color: var(--red); }
+  .url-row input::placeholder, .add-row input::placeholder { color: var(--ink-3); }
+
+  /* BUTTONS */
+  .btn { padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background .15s, transform .1s; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-family: var(--font); }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--red); color: #fff; }
+  .btn-primary:hover { background: var(--red-dark); }
+  .btn-primary:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+  .btn-secondary { background: var(--bg-3); color: var(--ink); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-sm { padding: 7px 13px; font-size: 13px; }
+
+  /* PILLS */
+  .feature-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+  .pill { font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 20px; background: var(--bg-3); color: var(--ink-2); border: 1px solid var(--border); }
+
+  /* EDGX BROADCAST */
+  .broadcast-wrap { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; text-align: left; }
+  .broadcast-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-2); }
+  .bc-title { font-size: 18px; font-weight: 800; }
+  .bc-sub { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+  .broadcast-body { padding: 18px 22px; }
+  .bc-meta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .bc-time { font-size: 14px; font-weight: 700; }
+  .bc-chip { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 12px; background: var(--bg-3); color: var(--ink-2); }
+  .bc-audio { width: 100%; margin-bottom: 18px; }
+  .bc-stories { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .bc-story { display: flex; gap: 11px; align-items: baseline; padding: 10px 12px; background: var(--bg-2); border-radius: 8px; }
+  .bc-rank { width: 22px; height: 22px; border-radius: 50%; background: var(--red); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .bc-story-info { flex: 1; min-width: 0; }
+  .bc-story-headline { font-size: 13px; font-weight: 600; line-height: 1.4; }
+  .bc-story-sources { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .bc-script-head { font-size: 14px; font-weight: 700; margin: 4px 0 12px; }
+  .bc-segment { margin-bottom: 18px; }
+  .bc-seg-label { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .bc-turn { display: flex; gap: 10px; margin-bottom: 9px; }
+  .bc-speaker { font-size: 12px; font-weight: 700; min-width: 64px; flex-shrink: 0; padding-top: 1px; }
+  .bc-speaker.JANE { color: #c026d3; }
+  .bc-speaker.BRANDON { color: #2563eb; }
+  .bc-line { font-size: 13px; line-height: 1.55; color: var(--ink); }
+  .bc-dir { font-size: 10px; font-weight: 600; color: var(--ink-3); background: var(--bg-3); padding: 1px 6px; border-radius: 8px; white-space: nowrap; vertical-align: middle; }
+
+  /* STATUS */
+  .status-bar { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; }
+  .status-bar.info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .status-bar.error   { background: #fff0f0; color: #b91c1c; border: 1px solid #fecaca; }
+  .status-bar.success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .status-bar.warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .spinner { width: 15px; height: 15px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; animation: spin .6s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TRANSCRIPT PANEL */
+  .transcript-panel { display: none; }
+  .transcript-panel.visible { display: block; }
+  .video-meta { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+  .video-thumb { width: 120px; height: 68px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--bg-3); }
+  .video-info h3 { font-size: 15px; font-weight: 700; line-height: 1.35; margin-bottom: 4px; }
+  .video-info p { font-size: 13px; color: var(--ink-3); }
+  .transcript-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .toolbar-right { display: flex; gap: 8px; }
+  .transcript-box { background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 18px; max-height: 420px; overflow-y: auto; font-size: 14px; line-height: 1.75; }
+
+  /* ── INSIGHTS / PROPRIETARY ENGINES ──────────────────────────────── */
+  .insights { display: none; margin-bottom: 20px; }
+  .insights.visible { display: block; }
+  .insights-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .insights-header h3 { font-size: 15px; font-weight: 800; }
+  .insights-header .auto-badge { font-size: 11px; font-weight: 700; color: var(--green); background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 20px; letter-spacing: .03em; }
+  .insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .insights-grid { grid-template-columns: 1fr; } }
+  .engine-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .engine-card.full { grid-column: 1 / -1; }
+  .engine-card-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--bg-2); }
+  .engine-icon { width: 26px; height: 26px; border-radius: 7px; background: var(--red); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .engine-card-head h4 { font-size: 13px; font-weight: 700; flex: 1; }
+  .engine-card-head .tm { font-size: 10px; color: var(--ink-3); font-weight: 600; }
+  .engine-card-body { padding: 14px 16px; max-height: 280px; overflow-y: auto; }
+
+  /* Chapters */
+  .chapter-row { display: flex; gap: 10px; padding: 7px 8px; border-radius: 6px; cursor: pointer; transition: background .12s; align-items: baseline; }
+  .chapter-row:hover { background: var(--bg-2); }
+  .chapter-row .ch-time { font-family: var(--mono); font-size: 12px; color: var(--red); font-weight: 600; min-width: 46px; flex-shrink: 0; }
+  .chapter-row .ch-title { font-size: 13px; font-weight: 600; }
+  .chapter-row .ch-meta { font-size: 11px; color: var(--ink-3); }
+
+  /* Key moments */
+  .moment-row { display: flex; gap: 10px; padding: 8px; border-radius: 6px; cursor: pointer; transition: background .12s; align-items: flex-start; }
+  .moment-row:hover { background: var(--bg-2); }
+  .moment-score { font-family: var(--mono); font-size: 11px; font-weight: 700; color: #fff; background: var(--red); border-radius: 5px; padding: 1px 6px; min-width: 30px; text-align: center; flex-shrink: 0; margin-top: 1px; }
+  .moment-text { font-size: 13px; line-height: 1.5; }
+  .moment-text .mt-time { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-right: 6px; }
+
+  /* Summary */
+  .summary-point { display: flex; gap: 10px; padding: 6px 0; align-items: baseline; }
+  .summary-point .sp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); flex-shrink: 0; margin-top: 7px; }
+  .summary-point .sp-text { font-size: 13px; line-height: 1.55; }
+  .summary-point .sp-time { font-family: var(--mono); font-size: 11px; color: var(--red); cursor: pointer; font-weight: 600; }
+  .summary-point .sp-time:hover { text-decoration: underline; }
+
+  /* DNA */
+  .dna-wrap { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .dna-radar { flex-shrink: 0; }
+  .dna-stats { flex: 1; min-width: 180px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .dna-stat .ds-val { font-size: 18px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+  .dna-stat .ds-label { font-size: 11px; color: var(--ink-3); }
+  .dna-bars { margin-top: 4px; }
+  .dna-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .dna-bar-label { font-size: 11px; color: var(--ink-2); min-width: 92px; flex-shrink: 0; }
+  .dna-bar-track { flex: 1; height: 6px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }
+  .dna-bar-fill { height: 100%; background: var(--red); border-radius: 3px; }
+  .dna-bar-num { font-size: 11px; font-family: var(--mono); color: var(--ink-3); min-width: 26px; text-align: right; }
+  .transcript-line { display: flex; gap: 12px; padding: 3px 6px; border-radius: 5px; cursor: pointer; transition: background .12s; }
+  .transcript-line:hover { background: var(--border); }
+  .ts-stamp { font-family: var(--mono); font-size: 12px; color: var(--ink-3); min-width: 46px; flex-shrink: 0; padding-top: 2px; }
+
+  /* CHANNEL MANAGER */
+  .channel-manager { display: grid; grid-template-columns: 290px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 700px) { .channel-manager { grid-template-columns: 1fr; } }
+
+  .channel-sidebar { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .sidebar-header { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .sidebar-header h3 { font-size: 14px; font-weight: 700; }
+  .channel-count-badge { font-size: 12px; font-weight: 600; color: var(--ink-3); background: var(--bg-3); padding: 2px 8px; border-radius: 10px; }
+  .add-row { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .add-row input { padding: 8px 10px; font-size: 13px; }
+  .preset-row { padding: 0 12px 10px; }
+  .preset-btn { width: 100%; justify-content: center; }
+
+  /* Preset modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: var(--bg); border-radius: 14px; max-width: 560px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-head h3 { font-size: 17px; font-weight: 800; }
+  .modal-head p { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .modal-close { background: none; border: none; font-size: 22px; color: var(--ink-3); cursor: pointer; line-height: 1; padding: 0 4px; }
+  .modal-close:hover { color: var(--ink); }
+  .modal-filters { padding: 12px 22px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-chip { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); color: var(--ink-2); cursor: pointer; transition: all .12s; }
+  .filter-chip.active { background: var(--red); color: #fff; border-color: var(--red); }
+  .modal-body { padding: 8px 14px; overflow-y: auto; flex: 1; }
+  .preset-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; transition: background .12s; }
+  .preset-item:hover { background: var(--bg-2); }
+  .preset-cat { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 7px; border-radius: 5px; flex-shrink: 0; min-width: 62px; text-align: center; }
+  .preset-cat.Finance  { background: #eff6ff; color: #1d4ed8; }
+  .preset-cat.Crypto   { background: #fef3c7; color: #92400e; }
+  .preset-cat.Politics { background: #f3e8ff; color: #7e22ce; }
+  .preset-cat.Fed      { background: #f0fdf4; color: #15803d; }
+  .preset-name { flex: 1; font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .preset-handle { font-size: 12px; color: var(--ink-3); flex-shrink: 0; }
+  .modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .modal-foot .foot-note { font-size: 11px; color: var(--ink-3); flex: 1; }
+  .channel-list { max-height: 420px; overflow-y: auto; }
+  .channel-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; transition: background .12s; border-bottom: 1px solid var(--bg-3); }
+  .channel-item:hover { background: var(--bg-2); }
+  .channel-item.selected { background: var(--red-soft); }
+  .ch-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--red); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
+  .ch-info { flex: 1; min-width: 0; }
+  .ch-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ch-handle { font-size: 12px; color: var(--ink-3); }
+  .ch-remove { background: none; border: none; cursor: pointer; color: var(--ink-3); font-size: 15px; padding: 2px 5px; border-radius: 4px; opacity: 0; transition: opacity .12s, color .12s; line-height: 1; }
+  .channel-item:hover .ch-remove { opacity: 1; }
+  .ch-remove:hover { color: var(--red); }
+
+  /* CHANNEL CONTENT */
+  .channel-content { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; min-height: 300px; }
+  .content-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; }
+  .content-ch-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .content-header-info h2 { font-size: 17px; font-weight: 800; }
+  .content-header-info p { font-size: 13px; color: var(--ink-3); }
+  .video-list-controls { padding: 11px 20px; border-bottom: 1px solid var(--border); background: var(--bg-2); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .video-list-controls h4 { font-size: 13px; font-weight: 700; }
+  .controls-right { display: flex; gap: 8px; align-items: center; }
+  .video-list { max-height: 500px; overflow-y: auto; }
+  .video-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--bg-3); transition: background .12s; }
+  .video-row:hover { background: var(--bg-2); }
+  .vr-check { width: 17px; height: 17px; border: 1.5px solid var(--border); border-radius: 4px; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all .12s; margin-top: 2px; background: var(--bg); }
+  .video-row.checked .vr-check { background: var(--red); border-color: var(--red); color: #fff; }
+  .vr-thumb { width: 88px; height: 50px; border-radius: 5px; object-fit: cover; background: var(--bg-3); flex-shrink: 0; }
+  .vr-info { flex: 1; min-width: 0; }
+  .vr-title { font-size: 13px; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 3px; }
+  .vr-date { font-size: 12px; color: var(--ink-3); }
+
+  /* BULK RESULTS */
+  .bulk-section { padding: 16px 20px; display: none; }
+  .bulk-section.visible { display: block; }
+  .bulk-item { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .bulk-item-header { padding: 11px 15px; background: var(--bg-2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .bulk-item-header h4 { font-size: 13px; font-weight: 700; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bulk-item-body { padding: 12px 15px; font-size: 13px; line-height: 1.8; max-height: 220px; overflow-y: auto; }
+
+  /* PROGRESS */
+  .progress-wrap { height: 4px; background: var(--bg-3); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+  .progress-bar { height: 100%; background: var(--red); transition: width .3s; width: 0%; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-3); }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; max-width: 260px; margin: 0 auto; }
+
+  /* SECTIONS */
+  .section { padding: 64px 0; border-top: 1px solid var(--border); }
+  .section h2 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+  .section .sub { font-size: 15px; color: var(--ink-2); margin-bottom: 36px; }
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+  .feature-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+  .feature-card .icon { font-size: 22px; margin-bottom: 10px; }
+  .feature-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .feature-card p { font-size: 13px; color: var(--ink-2); line-height: 1.6; }
+  .steps { display: flex; flex-direction: column; gap: 20px; }
+  .step { display: flex; gap: 16px; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--red); color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step h4 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  .step p { font-size: 13px; color: var(--ink-2); }
+
+  /* FAQ */
+  .faq-list { display: flex; flex-direction: column; gap: 2px; }
+  .faq-item { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .faq-q { padding: 14px 18px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; background: var(--bg); transition: background .12s; }
+  .faq-q:hover { background: var(--bg-2); }
+  .faq-chevron { color: var(--ink-3); transition: transform .2s; }
+  .faq-item.open .faq-chevron { transform: rotate(180deg); }
+  .faq-a { display: none; padding: 14px 18px; font-size: 13px; color: var(--ink-2); line-height: 1.7; border-top: 1px solid var(--border); }
+  .faq-item.open .faq-a { display: block; }
+
+  /* FOOTER */
+  footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: center; font-size: 13px; color: var(--ink-3); }
+  footer .footer-links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+  footer .footer-links a { color: var(--ink-3); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--ink); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: var(--bg-3); } ::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--red)"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#fff"/></svg>
+    YouTube<b>ToTranscript</b>
+  </div>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#faq">FAQ</a>
+    <a href="#hero" class="btn-nav">Get Transcript</a>
+  </div>
+</nav>
+
+<section id="hero" class="hero">
+  <div class="container">
+    <h1>YouTube to <span>Transcript</span></h1>
+    <p>Free transcript generator for any YouTube video. Track up to 50 channels and always get the latest transcript — no API key, no sign-up.</p>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('single')">Single Video</button>
+      <button class="tab-btn" onclick="switchTab('channels')">Channel Manager</button>
+      <button class="tab-btn" onclick="switchTab('broadcast')">EDGX News</button>
+    </div>
+
+    <!-- ── SINGLE VIDEO ──────────────────────────────────────────── -->
+    <div id="tab-single" class="tab-panel active">
+      <div class="input-card">
+        <div class="url-row">
+          <input type="text" id="video-url-input"
+            placeholder="Paste YouTube URL — e.g. https://www.youtube.com/watch?v=…"
+            autocomplete="off" spellcheck="false">
+          <button class="btn btn-primary" id="single-btn" onclick="fetchSingleTranscript()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+            Get Transcript
+          </button>
+        </div>
+        <div id="single-status"></div>
+      </div>
+
+      <!-- ── PROPRIETARY INSIGHTS (auto-generated) ─────────────────── -->
+      <div class="insights" id="single-insights">
+        <div class="insights-header">
+          <h3>Transcript Insights</h3>
+          <span class="auto-badge">⚡ AUTO</span>
+        </div>
+        <div class="insights-grid">
+
+          <div class="engine-card">
+            <div class="engine-card-head">
+              <div class="engine-icon">📑</div>
+              <h4>SmartChapters</h4><span class="tm">™</span>
+            </div>
+            <div class="engine-card-body" id="engine-chapters"></div>
+          </div>
+
+          <div class="engine-card">
+            <div class="engine-card-head">
+              <div class="engine-icon">⭐</div>
+              <h4>KeyMoments</h4><span class="tm">™</span>
+            </div>
+            <div class="engine-card-body" id="engine-moments"></div>
+          </div>
+
+          <div class="engine-card">
+            <div class="engine-card-head">
+              <div class="engine-icon">📝</div>
+              <h4>InstantSummary</h4><span class="tm">™</span>
+            </div>
+            <div class="engine-card-body" id="engine-summary"></div>
+          </div>
+
+          <div class="engine-card">
+            <div class="engine-card-head">
+              <div class="engine-icon">🧬</div>
+              <h4>TranscriptDNA</h4><span class="tm">™</span>
+            </div>
+            <div class="engine-card-body" id="engine-dna"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="input-card transcript-panel" id="single-transcript-panel">
+        <div class="video-meta" id="single-video-meta"></div>
+        <div class="transcript-toolbar">
+          <span style="font-size:13px;color:var(--ink-3)" id="single-line-count"></span>
+          <div class="toolbar-right">
+            <button class="btn btn-secondary btn-sm" onclick="copySingleTranscript()">📋 Copy</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadSingleTranscript()">⬇ Download</button>
+          </div>
+        </div>
+        <div class="transcript-box" id="single-transcript-box"></div>
+      </div>
+
+      <div class="feature-pills">
+        <span class="pill">✓ No API key</span>
+        <span class="pill">✓ Timestamped lines</span>
+        <span class="pill">✓ One-click copy</span>
+        <span class="pill">✓ Free — no sign-up</span>
+      </div>
+    </div>
+
+    <!-- ── CHANNEL MANAGER ───────────────────────────────────────── -->
+    <div id="tab-channels" class="tab-panel">
+      <div class="channel-manager">
+
+        <div class="channel-sidebar">
+          <div class="sidebar-header">
+            <h3>Channels</h3>
+            <span class="channel-count-badge" id="ch-count-badge">0 / 50</span>
+          </div>
+          <div class="add-row">
+            <input type="text" id="channel-input"
+              placeholder="@handle or channel URL"
+              autocomplete="off" spellcheck="false"
+              onkeydown="if(event.key==='Enter')addChannel()">
+            <button class="btn btn-primary btn-sm" id="add-ch-btn" onclick="addChannel()">Add</button>
+          </div>
+          <div class="preset-row">
+            <button class="btn btn-secondary btn-sm preset-btn" id="preset-btn" onclick="openPresets()">
+              ⭐ Load 50 trusted channels
+            </button>
+          </div>
+          <div id="add-ch-status"></div>
+          <div class="channel-list" id="channel-list">
+            <div class="empty-state" style="padding:40px 16px">
+              <div class="icon">📺</div>
+              <p>Add a channel to track its latest transcripts</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="channel-content" id="channel-content">
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <p>Select a channel to see its latest videos</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── EDGX NEWS BROADCAST ───────────────────────────────────── -->
+    <div id="tab-broadcast" class="tab-panel">
+      <div class="broadcast-wrap">
+        <div class="broadcast-head">
+          <div>
+            <h2 class="bc-title">EDGX News — Top of the Hour</h2>
+            <p class="bc-sub">Three top stories from the past hour — fused from 50 YouTube channels and 50 RSS news sources, deduplicated and ranked, debated by Jane &amp; Brandon.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="bc-run-btn" onclick="runBroadcast()">⟳ Generate now</button>
+        </div>
+        <div id="bc-status"></div>
+        <div class="broadcast-body" id="bc-body">
+          <div class="empty-state">
+            <div class="icon">📻</div>
+            <p>No bulletin yet. It builds automatically at the top of each hour, or generate one now.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section">
+  <div class="container">
+    <h2>Everything you need</h2>
+    <p class="sub">Built for note-takers, researchers, and content creators.</p>
+    <div class="features-grid">
+      <div class="feature-card"><div class="icon">⚡</div><h3>Instant Transcripts</h3><p>Paste a URL, get a timestamped transcript in seconds. Scraped directly from YouTube's caption data — no API key needed.</p></div>
+      <div class="feature-card"><div class="icon">📺</div><h3>Channel Manager</h3><p>Track up to 50 channels. One click fetches the latest video transcript for any channel automatically.</p></div>
+      <div class="feature-card"><div class="icon">📋</div><h3>One-Click Copy</h3><p>Copy the full transcript to your clipboard instantly. Paste into ChatGPT, Notion, or any notes app.</p></div>
+      <div class="feature-card"><div class="icon">⬇</div><h3>Download as TXT</h3><p>Save any transcript as a plain text file with timestamps for offline use or archival.</p></div>
+      <div class="feature-card"><div class="icon">🔗</div><h3>Click-to-Jump</h3><p>Click any transcript line to open the video at that exact timestamp in a new tab.</p></div>
+      <div class="feature-card"><div class="icon">📦</div><h3>Bulk Fetch</h3><p>Select multiple channel videos and fetch all their transcripts in one pass with a live progress bar.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="container">
+    <h2>How it works</h2>
+    <p class="sub">Three steps. No account required.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div><h4>Paste the YouTube URL</h4><p>Copy any YouTube video link and paste it into the input. Works with full URLs, short youtu.be links, and video IDs.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div><h4>Click Get Transcript</h4><p>The server fetches the caption track directly from YouTube's timedtext endpoint. No API key is used at any point.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div><h4>Copy, download, or use it</h4><p>One-click copy the full transcript with timestamps. Paste it into ChatGPT, save it as a file, or click any line to jump in the video.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container">
+    <h2>FAQ</h2>
+    <p class="sub">Common questions answered.</p>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Is this free? <span class="faq-chevron">⌄</span></div>
+        <div class="faq-a">Yes, completely free. No account, no API key, no limits on the number of transcripts you generate.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Why can some videos not be transcribed? <span class="faq-chevron">⌄</span></div>
+        <div class="faq-a">Transcripts are only available when the video has captions — either auto-generated by YouTube or manually added by the uploader. Private videos and age-restricted content are also inaccessible.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">How many channels can I track? <span class="faq-chevron">⌄</span></div>
+        <div class="faq-a">Up to 50 channels. Your channel list is stored in your browser's local storage — it persists across sessions and requires no account.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Does this use the YouTube Data API? <span class="faq-chevron">⌄</span></div>
+        <div class="faq-a">No. Channel video listings use YouTube's public Atom RSS feed (no API key required). Transcripts are fetched directly from YouTube's timedtext caption endpoint. No API quota is consumed.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">How do I use this with ChatGPT? <span class="faq-chevron">⌄</span></div>
+        <div class="faq-a">Click Copy after generating a transcript, then paste into ChatGPT with a prompt like "Summarise this transcript" or "Extract the key points from this video."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-links">
+    <a href="#how">How it works</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <p>Independent tool — not affiliated with YouTube or Google.<br>© 2026. All rights reserved.</p>
+</footer>
+
+<!-- Preset modal -->
+<div class="modal-overlay" id="preset-modal" onclick="if(event.target===this)closePresets()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3>50 Trusted Channels</h3>
+        <p>Curated finance, crypto, politics &amp; Fed sources</p>
+      </div>
+      <button class="modal-close" onclick="closePresets()">&times;</button>
+    </div>
+    <div class="modal-filters" id="preset-filters">
+      <button class="filter-chip active" onclick="filterPresets('All', this)">All</button>
+      <button class="filter-chip" onclick="filterPresets('Finance', this)">Finance</button>
+      <button class="filter-chip" onclick="filterPresets('Crypto', this)">Crypto</button>
+      <button class="filter-chip" onclick="filterPresets('Politics', this)">Politics</button>
+      <button class="filter-chip" onclick="filterPresets('Fed', this)">Fed</button>
+    </div>
+    <div class="modal-body" id="preset-body"></div>
+    <div class="modal-foot">
+      <span class="foot-note">Editorial selection by institutional reputation — not financial advice. Resolving handles may take a moment.</span>
+      <button class="btn btn-primary btn-sm" id="load-presets-btn" onclick="loadAllPresets()">Add all shown</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG
+   API_BASE auto-detects: same origin in production, localhost in dev.
+═══════════════════════════════════════════════════════════════ */
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? `http://${window.location.host}`
+  : window.location.origin;
+
+const CHANNEL_MAX = 50;
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const state = {
+  channels:        [],   // [{ channelId, name, handle }]
+  activeChannelId: null,
+  videos:          [],   // current channel's video list
+  checkedIds:      new Set(),
+  singleLines:     [],
+  singleVideoId:   null,
+  singleTitle:     '',
+};
+
+function saveChannels() {
+  try { localStorage.setItem('yttc2_channels', JSON.stringify(state.channels)); } catch (_) {}
+}
+function loadChannels() {
+  try {
+    const raw = localStorage.getItem('yttc2_channels');
+    if (raw) state.channels = JSON.parse(raw);
+  } catch (_) { state.channels = []; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════════ */
+function fmtMs(ms) {
+  const s   = Math.floor(ms / 1000);
+  const m   = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function setStatus(elId, type, html) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (!type) { el.innerHTML = ''; return; }
+  const spinner = type === 'info' ? '<div class="spinner"></div>' : '';
+  el.innerHTML = `<div class="status-bar ${type}">${spinner}<span>${html}</span></div>`;
+}
+
+async function apiFetch(path) {
+  const res = await fetch(API_BASE + path);
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
+  return json;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  const idx = { single: 0, channels: 1, broadcast: 2 }[tab] ?? 0;
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  if (tab === 'broadcast') loadLatestBroadcast();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EDGX NEWS BROADCAST
+═══════════════════════════════════════════════════════════════ */
+let broadcastLoaded = false;
+
+async function loadLatestBroadcast(force) {
+  if (broadcastLoaded && !force) return;
+  const body = document.getElementById('bc-body');
+  body.innerHTML = `<div style="padding:30px;text-align:center"><div class="spinner" style="margin:0 auto;color:var(--red)"></div></div>`;
+  try {
+    const manifest = await apiFetch('/api/broadcast/latest');
+    renderBroadcast(manifest);
+    broadcastLoaded = true;
+  } catch (err) {
+    body.innerHTML = `<div class="empty-state"><div class="icon">📻</div><p>${esc(err.message)}</p></div>`;
+  }
+}
+
+async function runBroadcast() {
+  const btn = document.getElementById('bc-run-btn');
+  btn.disabled = true;
+  setStatus('bc-status','info','Building bulletin — gathering stories, writing the script, rendering audio. This can take a minute…');
+  try {
+    const res = await fetch(API_BASE + '/api/broadcast/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ renderAudio: true }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
+    setStatus('bc-status','success','Bulletin generated.');
+    setTimeout(() => setStatus('bc-status', null), 3000);
+    renderBroadcast(json.manifest);
+  } catch (err) {
+    setStatus('bc-status','error', esc(err.message));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function renderBroadcast(manifest) {
+  const body = document.getElementById('bc-body');
+
+  // Story leaderboard
+  const stories = (manifest.stories || []).map((s, i) => {
+    const typeChip = s.mixedSources
+      ? '<span class="bc-chip" style="background:#f0fdf4;color:#15803d">YouTube + RSS</span>'
+      : s.sourceType === 'rss'
+        ? '<span class="bc-chip" style="background:#eff6ff;color:#1d4ed8">RSS</span>'
+        : '<span class="bc-chip" style="background:#fef2f2;color:#b91c1c">YouTube</span>';
+    const linkHtml = s.link
+      ? ` · <a href="${esc(s.link)}" target="_blank" rel="noopener">source ↗</a>`
+      : '';
+    return `
+    <div class="bc-story">
+      <span class="bc-rank">${i + 1}</span>
+      <div class="bc-story-info">
+        <div class="bc-story-headline">${esc(s.headline)}</div>
+        <div class="bc-story-sources">${esc((s.sources || []).join(', '))}${s.sources && s.sources.length > 1 ? ` · ${s.sources.length} sources` : ''} · score ${s.score ?? ''}${linkHtml}</div>
+      </div>
+      ${typeChip}
+    </div>`;
+  }).join('');
+
+  // Audio player (if available)
+  const audioHtml = manifest.files && manifest.files.audio
+    ? `<audio class="bc-audio" controls preload="none" src="${API_BASE}/api/broadcast/${esc(manifest.slug)}/audio"></audio>`
+    : `<div class="status-bar warning" style="margin-bottom:18px">Audio not available for this bulletin (script only).</div>`;
+
+  body.innerHTML = `
+    <div class="bc-meta-row">
+      <span class="bc-time">${esc(manifest.hourLabel || '')}</span>
+      <span class="bc-chip">${esc(manifest.dateLabel || '')}</span>
+      <span class="bc-chip">${(manifest.stats && manifest.stats.afterDedup) || 0} stories from ${(manifest.stats && manifest.stats.totalCandidates) || 0} sources</span>
+    </div>
+    ${audioHtml}
+    <div class="bc-stories">${stories}</div>
+    <div class="bc-script-head">Full Script — Jane &amp; Brandon</div>
+    <div id="bc-script"></div>
+  `;
+
+  // Load the full script for the dialogue rendering
+  try {
+    const scriptData = await apiFetch(`/api/broadcast/${encodeURIComponent(manifest.slug)}/script`);
+    renderScript(scriptData.produced || scriptData.script);
+  } catch (_) {
+    document.getElementById('bc-script').innerHTML =
+      `<div style="color:var(--ink-3);font-size:13px">Script detail unavailable.</div>`;
+  }
+}
+
+function renderScript(script) {
+  if (!script || !Array.isArray(script.segments)) return;
+  const el = document.getElementById('bc-script');
+  el.innerHTML = script.segments.map(seg => {
+    const label = seg.type === 'intro' ? 'Opening'
+                : seg.type === 'outro' ? 'Sign-off'
+                : `Story ${(seg.storyIndex ?? 0) + 1}${seg.headline ? ' — ' + seg.headline : ''}`;
+    const stanceChip = seg.stance
+      ? `<span class="bc-chip" style="background:#faf5ff;color:#7e22ce">${esc(seg.stance.jane)} vs ${esc(seg.stance.brandon)}</span>`
+      : '';
+    const turns = seg.turns.map(t => {
+      const dirChip = t.direction
+        ? `<span class="bc-dir" title="${esc(t.direction)}">${esc(t.beat || '')}${t.reactive ? ' · reactive' : ''}</span>`
+        : '';
+      return `
+      <div class="bc-turn">
+        <span class="bc-speaker ${t.speaker}">${esc(t.speaker)}</span>
+        <span class="bc-line">${esc(t.text)} ${dirChip}</span>
+      </div>`;
+    }).join('');
+    return `<div class="bc-segment"><div class="bc-seg-label">${esc(label)} ${stanceChip}</div>${turns}</div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SINGLE VIDEO
+═══════════════════════════════════════════════════════════════ */
+async function fetchSingleTranscript() {
+  const url = document.getElementById('video-url-input').value.trim();
+  if (!url) { setStatus('single-status','error','Please paste a YouTube video URL.'); return; }
+
+  const btn = document.getElementById('single-btn');
+  btn.disabled = true;
+  document.getElementById('single-transcript-panel').classList.remove('visible');
+  document.getElementById('single-insights').classList.remove('visible');
+  setStatus('single-status','info','Fetching transcript…');
+
+  try {
+    const data = await apiFetch(`/api/transcript?url=${encodeURIComponent(url)}`);
+    state.singleLines   = data.lines;
+    state.singleVideoId = data.videoId;
+    state.singleTitle   = document.getElementById('video-url-input').value.trim();
+    renderSingleTranscript(data);
+    setStatus('single-status','success',`${data.lines.length} lines loaded.`);
+    setTimeout(() => setStatus('single-status', null), 3000);
+  } catch (err) {
+    setStatus('single-status','error', esc(err.message));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderSingleTranscript(data) {
+  const thumb = `https://i.ytimg.com/vi/${data.videoId}/mqdefault.jpg`;
+  document.getElementById('single-video-meta').innerHTML = `
+    <img class="video-thumb" src="${esc(thumb)}" alt="thumbnail">
+    <div class="video-info">
+      <h3>Video ID: ${esc(data.videoId)}</h3>
+      <p>${data.lines.length} caption lines</p>
+    </div>
+  `;
+  document.getElementById('single-line-count').textContent = `${data.lines.length} lines`;
+  const box = document.getElementById('single-transcript-box');
+  box.innerHTML = data.lines.map(line =>
+    `<div class="transcript-line" onclick="openAt('${data.videoId}', ${line.offset})">
+      <span class="ts-stamp">${fmtMs(line.offset)}</span>
+      <span>${esc(line.text)}</span>
+    </div>`
+  ).join('');
+  document.getElementById('single-transcript-panel').classList.add('visible');
+
+  // Render the four proprietary engines automatically
+  if (data.analysis) renderInsights(data.analysis, data.videoId);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROPRIETARY ENGINE RENDERING (auto)
+═══════════════════════════════════════════════════════════════ */
+function renderInsights(a, videoId) {
+  const panel = document.getElementById('single-insights');
+  state.currentVideoId = videoId;
+
+  // ── SmartChapters ──
+  const chEl = document.getElementById('engine-chapters');
+  chEl.innerHTML = (a.smartChapters || []).map(c =>
+    `<div class="chapter-row" onclick="openAt('${esc(videoId)}', ${c.startMs})">
+       <span class="ch-time">${esc(c.startLabel)}</span>
+       <div>
+         <div class="ch-title">${esc(c.title)}</div>
+         <div class="ch-meta">${c.lineCount} lines</div>
+       </div>
+     </div>`
+  ).join('') || '<div style="color:var(--ink-3);font-size:13px">No chapters detected.</div>';
+
+  // ── KeyMoments ──
+  const kmEl = document.getElementById('engine-moments');
+  kmEl.innerHTML = (a.keyMoments || []).map(m =>
+    `<div class="moment-row" onclick="openAt('${esc(videoId)}', ${m.offset})">
+       <span class="moment-score">${m.score}</span>
+       <div class="moment-text"><span class="mt-time">${esc(m.startLabel)}</span>${esc(m.text)}</div>
+     </div>`
+  ).join('') || '<div style="color:var(--ink-3);font-size:13px">No key moments found.</div>';
+
+  // ── InstantSummary ──
+  const smEl = document.getElementById('engine-summary');
+  smEl.innerHTML = (a.instantSummary || []).map(s =>
+    `<div class="summary-point">
+       <span class="sp-dot"></span>
+       <div class="sp-text">${esc(s.text)}
+         <span class="sp-time" onclick="openAt('${esc(videoId)}', ${s.offset})"> [${esc(s.startLabel)}]</span>
+       </div>
+     </div>`
+  ).join('') || '<div style="color:var(--ink-3);font-size:13px">Summary unavailable.</div>';
+
+  // ── TranscriptDNA ──
+  renderDNA(a.transcriptDNA);
+
+  panel.classList.add('visible');
+}
+
+function renderDNA(dna) {
+  if (!dna) { document.getElementById('engine-dna').innerHTML = ''; return; }
+  const m = dna.metrics, raw = dna.raw;
+
+  const radar = buildRadarSVG([
+    { label: 'Pace',        value: m.pace },
+    { label: 'Diversity',   value: m.lexicalDiversity },
+    { label: 'Vocabulary',  value: m.vocabularyTier },
+    { label: 'Talk',        value: m.talkDensity },
+    { label: 'Complexity',  value: m.sentenceComplexity },
+  ]);
+
+  const bars = [
+    ['Pace',        m.pace],
+    ['Diversity',   m.lexicalDiversity],
+    ['Vocabulary',  m.vocabularyTier],
+    ['Talk density',m.talkDensity],
+    ['Complexity',  m.sentenceComplexity],
+  ].map(([label, val]) =>
+    `<div class="dna-bar-row">
+       <span class="dna-bar-label">${label}</span>
+       <div class="dna-bar-track"><div class="dna-bar-fill" style="width:${val}%"></div></div>
+       <span class="dna-bar-num">${val}</span>
+     </div>`
+  ).join('');
+
+  document.getElementById('engine-dna').innerHTML = `
+    <div class="dna-wrap">
+      <div class="dna-radar">${radar}</div>
+      <div style="flex:1;min-width:160px">
+        <div class="dna-stats" style="margin-bottom:10px">
+          <div class="dna-stat"><div class="ds-val">${raw.wpm}</div><div class="ds-label">words / min</div></div>
+          <div class="dna-stat"><div class="ds-val">${dna.wordCount.toLocaleString()}</div><div class="ds-label">total words</div></div>
+          <div class="dna-stat"><div class="ds-val">${raw.ttr}</div><div class="ds-label">lexical diversity</div></div>
+          <div class="dna-stat"><div class="ds-val">${fmtMs(dna.durationSec*1000)}</div><div class="ds-label">duration</div></div>
+        </div>
+        <div class="dna-bars">${bars}</div>
+      </div>
+    </div>`;
+}
+
+/* Build a pure-SVG radar chart from 0–100 metric values (deterministic) */
+function buildRadarSVG(axes) {
+  const size = 130, cx = size/2, cy = size/2, R = 48;
+  const n = axes.length;
+  const angle = i => (Math.PI * 2 * i / n) - Math.PI/2;
+  const point = (i, r) => [cx + Math.cos(angle(i)) * r, cy + Math.sin(angle(i)) * r];
+
+  // Grid rings
+  let grid = '';
+  [0.25, 0.5, 0.75, 1].forEach(f => {
+    const pts = axes.map((_, i) => point(i, R*f).map(v => v.toFixed(1)).join(',')).join(' ');
+    grid += `<polygon points="${pts}" fill="none" stroke="#e5e5e5" stroke-width="1"/>`;
+  });
+  // Axis spokes
+  let spokes = '';
+  axes.forEach((_, i) => {
+    const [x,y] = point(i, R);
+    spokes += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e5e5e5" stroke-width="1"/>`;
+  });
+  // Data polygon
+  const dataPts = axes.map((a, i) => point(i, R * (a.value/100)).map(v => v.toFixed(1)).join(',')).join(' ');
+  // Labels
+  let labels = '';
+  axes.forEach((a, i) => {
+    const [x,y] = point(i, R + 13);
+    const anchor = Math.abs(x-cx) < 5 ? 'middle' : (x < cx ? 'end' : 'start');
+    labels += `<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="9" fill="#717171" text-anchor="${anchor}">${a.label}</text>`;
+  });
+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    ${grid}${spokes}
+    <polygon points="${dataPts}" fill="rgba(255,0,0,0.15)" stroke="#FF0000" stroke-width="2"/>
+    ${axes.map((a,i)=>{const[x,y]=point(i,R*(a.value/100));return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#FF0000"/>`}).join('')}
+    ${labels}
+  </svg>`;
+}
+
+function openAt(videoId, offsetMs) {
+  const t = Math.floor(offsetMs / 1000);
+  window.open(`https://www.youtube.com/watch?v=${videoId}&t=${t}s`, '_blank');
+}
+
+function copySingleTranscript() {
+  if (!state.singleLines.length) return;
+  const text = state.singleLines.map(l => `[${fmtMs(l.offset)}] ${l.text}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('Transcript copied to clipboard'));
+}
+
+function downloadSingleTranscript() {
+  if (!state.singleLines.length) return;
+  const text = state.singleLines.map(l => `[${fmtMs(l.offset)}] ${l.text}`).join('\n');
+  triggerDownload(text, `transcript-${state.singleVideoId}.txt`);
+}
+
+function triggerDownload(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHANNEL MANAGER
+═══════════════════════════════════════════════════════════════ */
+async function addChannel() {
+  if (state.channels.length >= CHANNEL_MAX) {
+    setStatus('add-ch-status','warning',`Maximum of ${CHANNEL_MAX} channels reached.`);
+    return;
+  }
+
+  const input = document.getElementById('channel-input').value.trim();
+  if (!input) return;
+
+  const btn = document.getElementById('add-ch-btn');
+  btn.disabled = true;
+  setStatus('add-ch-status','info','Resolving channel…');
+
+  try {
+    const data = await apiFetch(`/api/channel/resolve?input=${encodeURIComponent(input)}`);
+    const { channelId, name } = data;
+
+    if (state.channels.find(c => c.channelId === channelId)) {
+      setStatus('add-ch-status','warning','This channel is already in your list.');
+      btn.disabled = false;
+      return;
+    }
+
+    // Extract a display handle from the original input
+    const handleMatch = input.match(/@([A-Za-z0-9_.-]+)/);
+    const handle = handleMatch ? `@${handleMatch[1]}` : input.replace(/https?:\/\/(www\.)?youtube\.com\//,'').split('/')[0];
+
+    state.channels.push({ channelId, name, handle });
+    saveChannels();
+    document.getElementById('channel-input').value = '';
+    setStatus('add-ch-status', null);
+    renderChannelList();
+    selectChannel(channelId);
+  } catch (err) {
+    setStatus('add-ch-status','error', esc(err.message));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHANNEL PRESETS (50 trusted channels)
+═══════════════════════════════════════════════════════════════ */
+let presetCache = null;
+let presetFilter = 'All';
+
+async function openPresets() {
+  document.getElementById('preset-modal').classList.add('visible');
+  if (!presetCache) {
+    document.getElementById('preset-body').innerHTML =
+      `<div style="padding:30px;text-align:center"><div class="spinner" style="margin:0 auto;color:var(--red)"></div></div>`;
+    try {
+      const data = await apiFetch('/api/presets');
+      presetCache = data.presets;
+    } catch (err) {
+      document.getElementById('preset-body').innerHTML =
+        `<div class="status-bar error" style="margin:14px">${esc(err.message)}</div>`;
+      return;
+    }
+  }
+  renderPresetList();
+}
+
+function closePresets() {
+  document.getElementById('preset-modal').classList.remove('visible');
+}
+
+function filterPresets(cat, btn) {
+  presetFilter = cat;
+  document.querySelectorAll('#preset-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderPresetList();
+}
+
+function renderPresetList() {
+  if (!presetCache) return;
+  const shown = presetFilter === 'All'
+    ? presetCache
+    : presetCache.filter(p => p.category === presetFilter);
+
+  document.getElementById('preset-body').innerHTML = shown.map(p => {
+    const already = state.channels.find(c =>
+      (p.channelId && c.channelId === p.channelId) ||
+      (c.handle && c.handle.toLowerCase() === p.handle.toLowerCase())
+    );
+    return `
+      <div class="preset-item">
+        <span class="preset-cat ${p.category}">${esc(p.category)}</span>
+        <span class="preset-name">${esc(p.name)}</span>
+        <span class="preset-handle">${esc(p.handle)}</span>
+        <button class="btn btn-secondary btn-sm" ${already ? 'disabled' : ''}
+          onclick="addPresetOne('${esc(p.handle)}','${esc(p.channelId || '')}','${esc(p.name)}',this)">
+          ${already ? '✓ Added' : 'Add'}
+        </button>
+      </div>`;
+  }).join('');
+}
+
+/* Add a single preset. If channelId is known, skip resolution entirely. */
+async function addPresetOne(handle, channelId, name, btn) {
+  if (state.channels.length >= CHANNEL_MAX) {
+    showToast(`Maximum of ${CHANNEL_MAX} channels reached.`);
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+
+  try {
+    let resolvedId = channelId;
+    let resolvedName = name;
+
+    // Resolve only when the channelId is not pre-verified
+    if (!resolvedId) {
+      const data = await apiFetch(`/api/channel/resolve?input=${encodeURIComponent(handle)}`);
+      resolvedId = data.channelId;
+      resolvedName = data.name || name;
+    }
+
+    if (state.channels.find(c => c.channelId === resolvedId)) {
+      if (btn) btn.textContent = '✓ Added';
+      return;
+    }
+
+    state.channels.push({ channelId: resolvedId, name: resolvedName, handle });
+    saveChannels();
+    renderChannelList();
+    if (btn) btn.textContent = '✓ Added';
+  } catch (err) {
+    showToast(`${name}: ${err.message}`);
+    if (btn) { btn.disabled = false; btn.textContent = 'Add'; }
+  }
+}
+
+/* Bulk-add every preset currently shown by the active filter. */
+async function loadAllPresets() {
+  if (!presetCache) return;
+  const shown = presetFilter === 'All'
+    ? presetCache
+    : presetCache.filter(p => p.category === presetFilter);
+
+  const btn = document.getElementById('load-presets-btn');
+  btn.disabled = true;
+
+  let added = 0, skipped = 0, failed = 0;
+
+  for (const p of shown) {
+    if (state.channels.length >= CHANNEL_MAX) break;
+
+    // Skip duplicates
+    if (state.channels.find(c =>
+      (p.channelId && c.channelId === p.channelId) ||
+      (c.handle && c.handle.toLowerCase() === p.handle.toLowerCase())
+    )) { skipped++; continue; }
+
+    btn.textContent = `Adding ${added + 1}/${shown.length}…`;
+
+    try {
+      let resolvedId = p.channelId;
+      let resolvedName = p.name;
+      if (!resolvedId) {
+        const data = await apiFetch(`/api/channel/resolve?input=${encodeURIComponent(p.handle)}`);
+        resolvedId = data.channelId;
+        resolvedName = data.name || p.name;
+      }
+      if (!state.channels.find(c => c.channelId === resolvedId)) {
+        state.channels.push({ channelId: resolvedId, name: resolvedName, handle: p.handle });
+        added++;
+      } else { skipped++; }
+    } catch (_) {
+      failed++;
+    }
+  }
+
+  saveChannels();
+  renderChannelList();
+  renderPresetList();
+  btn.disabled = false;
+  btn.textContent = 'Add all shown';
+
+  let msg = `Added ${added} channel${added !== 1 ? 's' : ''}`;
+  if (skipped) msg += `, ${skipped} already present`;
+  if (failed)  msg += `, ${failed} failed`;
+  showToast(msg);
+}
+
+
+  state.channels = state.channels.filter(c => c.channelId !== channelId);
+  if (state.activeChannelId === channelId) {
+    state.activeChannelId = null;
+    state.videos = [];
+    state.checkedIds.clear();
+    document.getElementById('channel-content').innerHTML = `
+      <div class="empty-state"><div class="icon">📋</div><p>Select a channel to see its latest videos</p></div>`;
+  }
+  saveChannels();
+  renderChannelList();
+}
+
+function renderChannelList() {
+  const el = document.getElementById('channel-list');
+  document.getElementById('ch-count-badge').textContent = `${state.channels.length} / ${CHANNEL_MAX}`;
+
+  if (!state.channels.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:40px 16px">
+      <div class="icon">📺</div><p>Add a channel to track its latest transcripts</p></div>`;
+    return;
+  }
+
+  el.innerHTML = state.channels.map(ch => `
+    <div class="channel-item ${ch.channelId === state.activeChannelId ? 'selected' : ''}"
+         onclick="selectChannel('${esc(ch.channelId)}')">
+      <div class="ch-avatar">${esc(ch.name.charAt(0).toUpperCase())}</div>
+      <div class="ch-info">
+        <div class="ch-name">${esc(ch.name)}</div>
+        <div class="ch-handle">${esc(ch.handle)}</div>
+      </div>
+      <button class="ch-remove" title="Remove"
+        onclick="event.stopPropagation();removeChannel('${esc(ch.channelId)}')">✕</button>
+    </div>
+  `).join('');
+}
+
+async function selectChannel(channelId) {
+  state.activeChannelId = channelId;
+  state.checkedIds.clear();
+  state.videos = [];
+  renderChannelList();
+
+  const ch = state.channels.find(c => c.channelId === channelId);
+  if (!ch) return;
+
+  document.getElementById('channel-content').innerHTML = `
+    <div class="content-header">
+      <div class="content-ch-avatar">${esc(ch.name.charAt(0).toUpperCase())}</div>
+      <div class="content-header-info">
+        <h2>${esc(ch.name)}</h2>
+        <p>Loading videos…</p>
+      </div>
+    </div>
+    <div style="padding:40px;text-align:center">
+      <div class="spinner" style="margin:0 auto;width:24px;height:24px;border-width:3px;color:var(--red)"></div>
+    </div>`;
+
+  try {
+    const data = await apiFetch(`/api/channel/videos?channelId=${encodeURIComponent(channelId)}`);
+    state.videos = data.videos;
+    renderChannelContent(ch);
+  } catch (err) {
+    document.getElementById('channel-content').innerHTML = `
+      <div class="content-header">
+        <div class="content-ch-avatar">${esc(ch.name.charAt(0).toUpperCase())}</div>
+        <div class="content-header-info"><h2>${esc(ch.name)}</h2></div>
+      </div>
+      <div style="padding:20px">
+        <div class="status-bar error">${esc(err.message)}</div>
+      </div>`;
+  }
+}
+
+function renderChannelContent(ch) {
+  if (state.activeChannelId !== ch.channelId) return; // stale response guard
+
+  const videoRows = state.videos.length === 0
+    ? `<div class="empty-state"><div class="icon">🎥</div><p>No public videos found for this channel.</p></div>`
+    : state.videos.map(v => `
+        <div class="video-row ${state.checkedIds.has(v.videoId) ? 'checked' : ''}" id="vrow-${v.videoId}">
+          <div class="vr-check" onclick="toggleCheck('${esc(v.videoId)}')">
+            ${state.checkedIds.has(v.videoId) ? '✓' : ''}
+          </div>
+          <img class="vr-thumb" src="${esc(v.thumbnail)}" alt="thumbnail" loading="lazy">
+          <div class="vr-info">
+            <div class="vr-title">${esc(v.title)}</div>
+            <div class="vr-date">${esc(v.published)}</div>
+          </div>
+          <button class="btn btn-primary btn-sm"
+            onclick="fetchVideoTranscriptInline('${esc(v.videoId)}', '${esc(v.title).replace(/'/g,"&#39;")}')">
+            Transcript
+          </button>
+        </div>
+      `).join('');
+
+  document.getElementById('channel-content').innerHTML = `
+    <div class="content-header">
+      <div class="content-ch-avatar">${esc(ch.name.charAt(0).toUpperCase())}</div>
+      <div class="content-header-info">
+        <h2>${esc(ch.name)}</h2>
+        <p>${state.videos.length} recent videos · ${esc(ch.handle)}</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="selectChannel('${esc(ch.channelId)}')">↻ Refresh</button>
+    </div>
+    <div class="video-list-controls">
+      <h4>Recent Videos</h4>
+      <div class="controls-right">
+        <span style="font-size:12px;color:var(--ink-3)" id="checked-label"></span>
+        <button class="btn btn-secondary btn-sm" onclick="toggleSelectAll()">Select all</button>
+        <button class="btn btn-primary btn-sm" id="bulk-fetch-btn" onclick="fetchBulkTranscripts()">Fetch Selected</button>
+      </div>
+    </div>
+    <div class="video-list">${videoRows}</div>
+    <div class="bulk-section" id="bulk-section"></div>
+    <div id="bulk-status" style="padding:0 20px 14px"></div>
+  `;
+
+  updateCheckedLabel();
+}
+
+function toggleCheck(videoId) {
+  if (state.checkedIds.has(videoId)) state.checkedIds.delete(videoId);
+  else state.checkedIds.add(videoId);
+  const row = document.getElementById(`vrow-${videoId}`);
+  if (row) {
+    row.classList.toggle('checked', state.checkedIds.has(videoId));
+    row.querySelector('.vr-check').textContent = state.checkedIds.has(videoId) ? '✓' : '';
+  }
+  updateCheckedLabel();
+}
+
+function toggleSelectAll() {
+  const allChecked = state.videos.every(v => state.checkedIds.has(v.videoId));
+  if (allChecked) state.videos.forEach(v => state.checkedIds.delete(v.videoId));
+  else state.videos.forEach(v => state.checkedIds.add(v.videoId));
+  // Re-render just the video list rows
+  const ch = state.channels.find(c => c.channelId === state.activeChannelId);
+  if (ch) renderChannelContent(ch);
+}
+
+function updateCheckedLabel() {
+  const el = document.getElementById('checked-label');
+  if (el) el.textContent = state.checkedIds.size > 0 ? `${state.checkedIds.size} selected` : '';
+}
+
+/* Fetch transcript for a single video within the channel view */
+async function fetchVideoTranscriptInline(videoId, title) {
+  switchTab('single');
+  document.getElementById('video-url-input').value = `https://www.youtube.com/watch?v=${videoId}`;
+  await fetchSingleTranscript();
+}
+
+/* Bulk fetch all selected videos */
+async function fetchBulkTranscripts() {
+  const ids = [...state.checkedIds];
+  if (!ids.length) { showToast('Select at least one video first.'); return; }
+
+  const bulkSection = document.getElementById('bulk-section');
+  const statusEl    = document.getElementById('bulk-status');
+  const btn         = document.getElementById('bulk-fetch-btn');
+
+  bulkSection.innerHTML = '';
+  bulkSection.classList.add('visible');
+  btn.disabled = true;
+
+  let done = 0;
+  const errors = [];
+
+  statusEl.innerHTML = `
+    <div class="status-bar info">
+      <div class="spinner"></div>
+      <div style="flex:1">
+        Fetching <span id="bulk-prog-text">0 / ${ids.length}</span>
+        <div class="progress-wrap"><div class="progress-bar" id="bulk-progress-bar"></div></div>
+      </div>
+    </div>`;
+
+  for (const videoId of ids) {
+    const video = state.videos.find(v => v.videoId === videoId);
+    const title = video?.title || videoId;
+
+    document.getElementById('bulk-prog-text').textContent = `${done} / ${ids.length}`;
+    document.getElementById('bulk-progress-bar').style.width = `${(done / ids.length) * 100}%`;
+
+    try {
+      const data = await apiFetch(`/api/transcript?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`);
+      const lines = data.lines;
+
+      const el = document.createElement('div');
+      el.className = 'bulk-item';
+      el.dataset.videoId = videoId;
+      el.dataset.lines   = JSON.stringify(lines);
+      el.innerHTML = `
+        <div class="bulk-item-header">
+          <h4>${esc(title)}</h4>
+          <button class="btn btn-secondary btn-sm" onclick="copyBulkItem('${esc(videoId)}')">📋 Copy</button>
+          <button class="btn btn-secondary btn-sm" onclick="downloadBulkItem('${esc(videoId)}','${esc(title).replace(/'/g,"&#39;")}')">⬇</button>
+        </div>
+        <div class="bulk-item-body">
+          ${lines.map(l =>
+            `<span style="font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:8px">${fmtMs(l.offset)}</span>${esc(l.text)}<br>`
+          ).join('')}
+        </div>`;
+      bulkSection.appendChild(el);
+    } catch (err) {
+      errors.push(`${title}: ${err.message}`);
+    }
+    done++;
+  }
+
+  document.getElementById('bulk-progress-bar').style.width = '100%';
+  statusEl.innerHTML = errors.length === 0
+    ? `<div class="status-bar success">✓ All ${done} transcripts fetched.</div>`
+    : `<div class="status-bar warning">Fetched ${done - errors.length}/${done}. Failed: ${errors.map(esc).join('; ')}</div>`;
+  btn.disabled = false;
+}
+
+function copyBulkItem(videoId) {
+  const el = document.querySelector(`.bulk-item[data-video-id="${videoId}"]`);
+  if (!el) return;
+  const lines = JSON.parse(el.dataset.lines || '[]');
+  const text = lines.map(l => `[${fmtMs(l.offset)}] ${l.text}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('Transcript copied'));
+}
+
+function downloadBulkItem(videoId, title) {
+  const el = document.querySelector(`.bulk-item[data-video-id="${videoId}"]`);
+  if (!el) return;
+  const lines = JSON.parse(el.dataset.lines || '[]');
+  const text = lines.map(l => `[${fmtMs(l.offset)}] ${l.text}`).join('\n');
+  triggerDownload(text, `transcript-${videoId}.txt`);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FAQ
+═══════════════════════════════════════════════════════════════ */
+function toggleFaq(el) { el.closest('.faq-item').classList.toggle('open'); }
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+(function init() {
+  loadChannels();
+  renderChannelList();
+  document.getElementById('video-url-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') fetchSingleTranscript();
+  });
+})();
+</script>
+</body>
+</html>
