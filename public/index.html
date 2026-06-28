@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -302,7 +302,7 @@
 
 <nav>
   <div class="nav-brand">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--red)"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#fff"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--red)"></svg>
     YouTube<b>ToTranscript</b>
   </div>
   <div class="nav-links">
@@ -327,11 +327,9 @@
     <div id="tab-single" class="tab-panel active">
       <div class="input-card">
         <div class="url-row">
-          <input type="text" id="video-url-input"
-            placeholder="Paste YouTube URL — e.g. https://www.youtube.com/watch?v=…"
-            autocomplete="off" spellcheck="false">
+          <input type="text" id="video-url-input" placeholder="Paste YouTube URL — e.g. https://www.youtube.com/watch?v=…" autocomplete="off" spellcheck="false">
           <button class="btn btn-primary" id="single-btn" onclick="fetchSingleTranscript()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"></svg>
             Get Transcript
           </button>
         </div>
@@ -411,10 +409,7 @@
             <span class="channel-count-badge" id="ch-count-badge">0 / 50</span>
           </div>
           <div class="add-row">
-            <input type="text" id="channel-input"
-              placeholder="@handle or channel URL"
-              autocomplete="off" spellcheck="false"
-              onkeydown="if(event.key==='Enter')addChannel()">
+            <input type="text" id="channel-input" placeholder="@handle or channel URL" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')addChannel()">
             <button class="btn btn-primary btn-sm" id="add-ch-btn" onclick="addChannel()">Add</button>
           </div>
           <div class="preset-row">
@@ -539,7 +534,7 @@
         <h3>50 Trusted Channels</h3>
         <p>Curated finance, crypto, politics &amp; Fed sources</p>
       </div>
-      <button class="modal-close" onclick="closePresets()">&times;</button>
+      <button class="modal-close" onclick="closePresets()">×</button>
     </div>
     <div class="modal-filters" id="preset-filters">
       <button class="filter-chip active" onclick="filterPresets('All', this)">All</button>
@@ -1144,7 +1139,14 @@ async function loadAllPresets() {
   showToast(msg);
 }
 
-
+/* ═══════════════════════════════════════════════════════════════
+   REMOVE CHANNEL
+   FIX: function declaration was missing — body was floating at
+   top level between loadAllPresets() and renderChannelList(),
+   causing a SyntaxError that prevented the entire script from
+   executing (all buttons dead).
+═══════════════════════════════════════════════════════════════ */
+function removeChannel(channelId) {
   state.channels = state.channels.filter(c => c.channelId !== channelId);
   if (state.activeChannelId === channelId) {
     state.activeChannelId = null;
